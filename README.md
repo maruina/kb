@@ -35,3 +35,5 @@ By default `kubelet` disable swap on a Linux machine with [this commit](https://
   ```
 
   The first form may be used only within a function, not for package-level variables. In practice, you should generally use one of the first two forms, with explicit initialization to say that the initial value is important and implicit initialization to say that the initial value doesn’t matter.
+
+- A `map` holds a set of key/value pairs and provides constant-time operations to store, retrieve, or test for an item in the set. The key may be of any type whose values can be compared with `==`, strings being the most common example; the value may be of any type at all. Think about `map` as a Python dictionary.
