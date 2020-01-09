@@ -47,6 +47,13 @@ By default `kubelet` disable swap on a Linux machine with [this commit](https://
 
 > using a value of vm.swappiness=0 for Docker environments, which prevents swapping except in the case of an OOM (OutOfMemory) condition.
 
+### RBAC
+
+- A `Role` defines rules that specify a set of resources and a set of verbs, which are actions that can be taken on those objects. But they say nothing about who can perform those actions on those objects.
+- A RoleBinding links a role to an identity. This might be a user, a group, or a service account. This adds the “who” part.
+- Roles and RoleBindings apply to a namespace. There are also cluster-wide equivalents called ClusterRoles and ClusterRoleBindings.
+- To verify users permissions: `kubectl auth can-i <verb> <resource> –as=<identity>`
+
 ## Golang
 
 ### Basics
@@ -57,6 +64,9 @@ By default `kubelet` disable swap on a Linux machine with [this commit](https://
 ### Packages and Imports
 
 - A program will not compile if there are missing imports or if there are unnecessary ones.
+- Packages in Go serve the same purposes as libraries or modules in other languages, supporting modularity, encapsulation, separate compilation, and reuse.
+- Each package serves as a separate name space for its declarations.
+- Packages also let us hide information by controlling which names are visible outside the package, or exported. In Go, exported identifiers start with an upper-case letter.
 
 ### Variables
 
@@ -72,4 +82,84 @@ By default `kubelet` disable swap on a Linux machine with [this commit](https://
   ```
 
   The first form may be used only within a function, not for package-level variables. In practice, you should generally use one of the first two forms, with explicit initialization to say that the initial value is important and implicit initialization to say that the initial value doesn’t matter.
+
+#### Pointers
+
+- A variable is a piece of storage containing a value. Variables created by declarations are identified by a name, such as x, but many variables are identified only by expressions like x[i] or x.f. All these expressions read the value of a variable, except when they appear on the left-hand side of an assignment, in which case a new value is assigned to the variable.
+- A `pointer` value is the address of a variable. A pointer is thus the location at which a value is stored. Not every value has an address, but every variable does. With a pointer, we can read or update the value of a variable indirectly, without using or even knowing the name of the variable, if indeed it has a name.
+  If a variable is declared var x int, the expression `&x` ("address of x") yields a pointer to an integer variable, that is, a value of type *int, which is pronounced "pointer to int." If this value is called p, we say "p points to x". The variable to which p points is written *p. The expression \*p yields the value of that
+
+- Another way to create a variable is to use the built-in function `new`. The expression `new(T)` creates an unnamed variable of type T, initializes it to the zero value of T, and returns its address, which is a value of type \*T.
+- The lifetime of a package-level variable is the entire execution of the program. By contrast, local variables have dynamic lifetimes: a new instance is created each time the declaration statement is executed, and the variable lives on until it becomes unreachable, at which point its storage may be recycled. Function parameters and results are local variables too; they are created each time their enclosing function is called.
+- How does the garbage collector know that a variable’s storage can be reclaimed? The basic idea is that every package-level variable, and every local variable of each currently active function, can potentially be the start or root of a path to the variable in question, following pointers and other kinds of references that ultimately lead to the variable. If no such path exists, the variable has become unreachable, so it can no longer affect the rest of the computation.
+- A name declared inside a syntactic block is not visible outside that block.
+
+### Data Types
+
+#### Strings
+
+- A string is an immutable sequence of bytes. The built-in `len` function returns the _number of bytes_ in a string, and the index operation `s[i]` retrieves the _i-th byte_ of string s, where 0 ≤ i < len(s).
+- Immutability means that it is safe for two copies of a string to share the same underlying memory, making it cheap to copy strings of any length. Similarly, a string s and a substring like s[7:] may safely share the same data, so the substring operation is also cheap.
+- Four standard packages are particularly important for manipulating strings: `bytes`, `strings`, `strconv`, and `unicode`.
+  - The strings package provides many functions for searching, replacing, comparing, trimming, splitting, and joining strings.
+  - The bytes package has similar functions for manipulating slices of bytes, of type []byte, which share some properties with strings. Because strings are immutable, building up strings incrementally can involve a lot of allocation and copying. In such cases, it’s more efficient to use the bytes.Buffer type.
+  - The strconv package provides functions for converting boolean, integer, and floating-point values to and from their string representations, and functions for quoting and unquoting strings.
+  - The unicode package provides functions like IsDigit, IsLetter, IsUpper, and IsLower for classifying runes.
+
+#### Array
+
+- An array is a fixed-length sequence of zero or more elements of a particular type.
+- In an array literal, if an ellipsis `...` appears in place of the length, the array length is determined by the number of initializers.
+- The size of an array is part of its type, so [3]int and [4]int are different types. The size must be a constant expression.
+
+#### Slices
+
+- Slices represent variable-length sequences whose elements all have the same type. A slice type is written `[]T`, where the elements have type T.
+- A slice has three components: a pointer, a length, and a capacity. The pointer points to the first element of the array that is reachable through the slice, which is not necessarily the array’s first element. The length is the number of slice elements; it can’t exceed the capacity, which is usually the number of elements between the start of the slice and the end of the underlying array. The built-in functions len and cap return those values.
+
+#### Map (dict)
+
 - A `map` holds a set of key/value pairs and provides constant-time operations to store, retrieve, or test for an item in the set. The key may be of any type whose values can be compared with `==`, strings being the most common example; the value may be of any type at all. Think about `map` as a Python dictionary.
+- `map` is a reference to a hash table, and a map type is written `map[K]V` (or `map[string]int{}`), where K and V are the types of its keys and values. All of the keys in a given map are of the same type, and all of the values are of the same type, but the keys need not be of the same type as the values. The key type K must be comparable using ==, so that the map can test whether a given key is equal to one already within it.
+- You’ll often see these two statements combined, like this:
+
+  ```go
+  if age, ok := ages["bob"]; !ok { /* ... */ }
+  ```
+
+  Subscripting a map in this context yields two values; the second is a boolean that reports whether the element was present. The boolean variable is often called ok, especially if it is immediately used in an if condition.
+
+#### Structs
+
+- A struct is an aggregate data type that groups together zero or more named values of arbitrary types as a single entity. Each value is called a field.
+
+#### JSON
+
+- A `field tag` is a string of metadata associated at compile time with the field of a struct.
+
+  ```go
+  Year  int  `json:"released"`
+  Color bool `json:"color,omitempty"`
+  ```
+
+### Functions
+
+```go
+func name(parameter-list) (result-list) {
+    body
+}
+```
+
+- The type of a function is sometimes called its signature. Two functions have the same type or signature if they have the same sequence of parameter types and the same sequence of result types
+- Every function call must provide an argument for each parameter, in the order in which the parameters were declared. Go has no concept of default parameter values, nor any way to specify arguments by name, so the names of parameters and results don’t matter to the caller except as documentation.
+
+### Goroutine
+
+- A `goroutine` is a concurrent function execution.
+- A `channel` is a communication mechanism that allows one goroutine to pass values of a specified type to another goroutine.
+- `“ch := make(chan string)` creates a channel of strings.
+- When one goroutine attempts a send or receive on a channel, it blocks until another goroutine attempts the corresponding receive or send operation, at which point the value is transferred and both goroutines proceed.
+
+## Prometheus
+
+- A metric with `container_name="POD"` refers to the `pause` container.
