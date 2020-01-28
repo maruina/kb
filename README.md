@@ -163,3 +163,44 @@ func name(parameter-list) (result-list) {
 ## Prometheus
 
 - A metric with `container_name="POD"` refers to the `pause` container.
+
+## Envoy
+
+### Glossary
+
+- **Host**: An entity capable of network communication (application on a mobile phone, server, etc.).
+- **Downstream**: A downstream host connects to Envoy, sends requests, and receives responses; it's the _client_
+- **Upstream**: An upstream host receives connections and requests from Envoy and returns responses; it's the _server_
+- **Cluster**: A cluster is a group of logically similar upstream hosts that Envoy connects to.
+
+### Service discovery
+
+When an upstream cluster is defined in the configuration, Envoy needs to know how to resolve the members of the cluster. This is known as service discovery.
+
+#### Strict DNS
+
+When using strict DNS service discovery, Envoy will continuously and asynchronously resolve the specified DNS targets. Each returned IP address in the DNS result will be considered an explicit host in the upstream cluster. Note that Envoy never synchronously resolves DNS in the forwarding path. At the expense of eventual consistency, there is never a worry of blocking on a long running DNS query.
+
+#### Endpoint discovery service (EDS)
+
+The endpoint discovery service is a xDS management server based on gRPC or REST-JSON API server used by Envoy to fetch cluster members. The cluster members are called “endpoint” in Envoy terminology.
+
+### API
+
+#### core.Locality
+
+Identifies location of where either Envoy runs or where upstream hosts run.
+
+```json
+{
+  "region": "...",
+  "zone": "...",
+  "sub_zone": "..."
+}
+```
+
+where:
+
+- region: (string) Region this zone belongs to.
+- zone: (string) Defines the local service zone where Envoy is running. Though optional, it should be set if discovery service routing is used and the discovery service exposes zone data, either in this message or via --service-zone. The meaning of zone is context dependent, e.g. Availability Zone (AZ) on AWS, Zone on GCP, etc.
+- sub_zone: (string) When used for locality of upstream hosts, this field further splits zone into smaller chunks of sub-zones so they can be load balanced independently. This can be for example a cluster.
